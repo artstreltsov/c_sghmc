@@ -1,5 +1,8 @@
+#using Eigen library for C++ la
 ! git clone https://github.com/RLovelett/eigen.git
 
+    
+#pybind11 wrap of the SGHMC C++ function
 %%file sghmcwrap.cpp
 <%
 cfg['compiler_args'] = ['-std=c++11']
@@ -16,47 +19,26 @@ setup_pybind11(cfg)
 #include <pybind11/functional.h>
 
 namespace py = pybind11;
-
-// randnorm
-Eigen::VectorXd randnorm(float mu, float Sigma, int n) {
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator (seed);
-    std::normal_distribution<double> distribution (mu, Sigma);
-    Eigen::VectorXd y(n,1);
-    for (int i=0; i<n; ++i){
-        y(i)=distribution(generator);
-        }
-    return y;
-}
-    
-// randnorm one draw
-float randnorm1(float mu, float Sigma) {
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator (seed);
-    std::normal_distribution<double> distribution (mu, Sigma);
-    return distribution(generator);
-}    
+ 
     
 // sghmc function
-float sghmc(const std::function<float(float)> &U, const std::function<float(float)> &gradU, float m, float dt, int nstep, float x, float C, float V) {
+float sghmc(const std::function<float(float)> &U, const std::function<float(float)> &gradU, float M, float epsilon, int m, float theta, float C, float V) {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
     std::normal_distribution<double> distribution (0, 1);
     float r;
-    r=distribution(generator)*pow(m,0.5);
-    float D;
-    D=pow(2*(C-0.5*V*dt)*dt,0.5);
-    for (int i=0; i<nstep-1; ++i){
-        r=r-gradU(x)*dt-r*C*dt+distribution(generator)*D;
-        x=x+(r/m)*dt;
+    r=distribution(generator)*pow(M,0.5);
+    float Ax;
+    Ax=pow(2*(C-0.5*V*epsilon)*epsilon,0.5);
+    for (int i=0; i<m-1; ++i){
+        r=r-gradU(theta)*epsilon-r*C*epsilon+distribution(generator)*Ax;
+        theta=theta+(r/M)*epsilon;
         }
-    return x;
+    return theta;
 }
 
 PYBIND11_PLUGIN(sghmcwrap) {
     pybind11::module m("sghmcwrap", "auto-compiled c++ extension of sghmc");
-    m.def("randnorm", &randnorm);
-    m.def("randnorm1", &randnorm1);
     m.def("sghmc", &sghmc);
     return m.ptr();
 }
@@ -66,46 +48,33 @@ PYBIND11_PLUGIN(sghmcwrap) {
 import cppimport
 sghwrap=cppimport.imp("sghmcwrap")
 
-
-
+#test it on a simple example from
+#"Stochastic Gradient Hamiltonian Monte Carlo" by Tianqi Chen, Emily B. Fox, Carlos Guestrin
 import sympy as sp
 x=sp.symbols('x')
 U = sp.symbols('U', cls=sp.Function)
-U=sp.Matrix([-2* x**2 + x**4])
+U=sp.Matrix([-2* x**2 + x**4]) #define your potential energy here
 x = sp.Matrix([x])
 gradientU = sp.simplify(U.jacobian(x))
 
+#cover sympy function object into a callable function
 U=sp.lambdify(x,U)
 gradU=sp.lambdify(x,gradientU)
 
+#Parameters for analysis (to replicate the paper)
+nsample=80000 #number of iterations for the sample
+xstep=0.01 #step size for true distribution
+M=1 #mass
+C=3 #constant for sghmc
+epsilon=0.1 #dt stepsize term
+m=50 #number of steps for Monte-Carlo
+V=4 #estimate of Fisher Info for Bhat approximation in sghmc
+numpy.random.seed(2017)
 
-
-import numba
-from numba import jit
-from numba import float64
-
-@jit(float64[:](float64, float64, float64, float64, float64, float64))
-def sampling(nsample,m,dt,nstep,C,V):
-    x=0
+def sghmc(U,gradU,M,epsilon,m,theta,C,V,nsample):
+    samplessghmc=np.zeros(shape=(nsample,1))
+    theta=0
     for i in range(1,nsample+1):
-        x=sghwrap.sghmc(U,gradU,m,dt,nstep,x,C,V)
-        samples[i-1]=x
-    return samples
-
-
-
-    %%time
-
-import numpy as np
-
-nsample=80000
-xstep=0.1
-m=1
-C=3
-dt=0.1
-nstep=50
-V=4
-
-samples=np.zeros(shape=(nsample,1))
-
-samples=sampling(nsample,m,dt,nstep,C,V)
+        theta=sghwrap.sghmc(U,gradU,M,epsilon,m,theta,C,V)
+        samplessghmc[i-1]=theta
+    return samplesshmc
