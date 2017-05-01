@@ -11,7 +11,10 @@ Main files
 =======================
 - **sghmcwrap.cpp** is the original sghmc algo in C++ wrapped for Python
 
-- **c_sghmc.py** calls and decorates the above extension and tests on an example from the original paper 
+- **c_sghmc.py** calls and decorates the above extension and tests on an example from the original paper
+
+- **projectcode.py** is the original project code
+
 Packages required to run the code
 =======================
 
