@@ -1,19 +1,21 @@
 C-SGHMC
 =======================
 
-SGHMC algorithm implemented in C++
+This is a repository created as part of a statistical computation project at Duke University.
 
-----
+The code to be found here is a C++ implementation of SGHMC algorithm wrapped for Python using pybind11. It is further used to verify the results in the original paper on SGHMC: "Stochastic Gradient Hamiltonian Monte Carlo" by Tianqi Chen, Emily B. Fox and Carlos Guestrin.
 
-This is the README file for the project.
+As seen from our project this is a 15-time-efficiency-improvement in terms of runtime over the pure python version.
+=======================
 
-The file should use UTF-8 encoding and be written using `reStructuredText
-<http://docutils.sourceforge.net/rst.html>`_. It
-will be used to generate the project webpage on PyPI and will be displayed as
-the project homepage on common code-hosting services, and should be written for
-that purpose.
+- The implementation makes use of **Eigen** library for C++ and hence the line:
+! git clone https://github.com/RLovelett/eigen.git
 
-Typical contents for this file would include an overview of the project, basic
-usage examples, etc. Generally, including the project changelog in here is not
-a good idea, although a simple "What's New" section for the most recent version
-may be appropriate.
+Make sure you have it cloned in the same directory as your code.
+
+- **pybind11** and **cppimport** are the two standard packages required for wrapping C++ codes for Python and importing them:
+! pip3 install pybind11
+
+! pip3 install cppimport
+
+The example makes use of **sympy** to specify functions (such as potential and kinetic energies as well as the gradient of the former), **numpy** and **numpy.random**.
