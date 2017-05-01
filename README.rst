@@ -5,7 +5,9 @@ This is a repository created as part of a statistical computation project at Duk
 
 The code to be found here is a C++ implementation of SGHMC algorithm wrapped for Python using pybind11. It is further used to verify the results in the original paper on SGHMC: "Stochastic Gradient Hamiltonian Monte Carlo" by Tianqi Chen, Emily B. Fox and Carlos Guestrin.
 
-As seen from our project this is a 15-time-efficiency-improvement in terms of runtime over the pure python version.
+As seen from our project this is a **15-time-efficiency-improvement** in terms of runtime over the pure python version.
+
+Packages required to run the code
 =======================
 
 - The implementation makes use of **Eigen** library for C++ and hence the line:
